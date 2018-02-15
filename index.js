@@ -139,8 +139,6 @@ class FfmpegRespawn extends EventEmitter {
             this._exitCallback = options.exitCallback;
         }
 
-
-
         //configure time that passes without progress to trigger ffmpeg to be killed
         const killAfterStall = parseInt(options.killAfterStall);
         if (isNaN(killAfterStall) || killAfterStall < 10) {
