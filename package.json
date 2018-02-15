@@ -1,0 +1,35 @@
+{
+  "name": "ffmpeg-respawn",
+  "version": "0.0.1",
+  "description": "Automatically kill a stalled ffmpeg process and re-spawn it after it exits.",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "ffmpeg-static": "^2.1.0",
+    "mp4frag": "0.0.14",
+    "pam-diff": "^0.12.0-napi",
+    "pipe2pam": "^0.6.2"
+  },
+  "scripts": {
+    "test": "node tests/test",
+    "start": "node examples/example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevinGodell/ffmpeg-respawn.git"
+  },
+  "keywords": [
+    "ffmpeg",
+    "progress",
+    "stall",
+    "respawn",
+    "spawn",
+    "restart"
+  ],
+  "author": "Kevin Godell <kevin.godell@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kevinGodell/ffmpeg-respawn/issues"
+  },
+  "homepage": "https://github.com/kevinGodell/ffmpeg-respawn#readme"
+}
