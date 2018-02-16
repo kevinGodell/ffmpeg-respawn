@@ -12,6 +12,7 @@
   },
   "scripts": {
     "test": "node tests/test",
+    "preversion": "npm test",
     "start": "node examples/example"
   },
   "repository": {
