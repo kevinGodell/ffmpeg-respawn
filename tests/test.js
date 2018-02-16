@@ -27,7 +27,7 @@ assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', 'in', 'pipe:2']});
     },
-    /Params error: "pipe:2" is reserved for logging to console./
+    /Params error: "pipe:2" is reserved for ffmpeg logging to callback./
 );
 
 assert.throws(
@@ -62,7 +62,7 @@ assert.throws(
     () => {
         new FfmpegRespawn({params: ['-i', 'in', 'pipe:1'], pipes: [{stdioIndex: 4, destination: writable}]});
     },
-    /Params\/Pipes mismatch: pipe:4 not found in params./
+    /Pipes error: options.pipes did not have a matching pipe or callback for pipe:1./
 );
 
 assert.throws(
