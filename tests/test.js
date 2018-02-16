@@ -14,7 +14,7 @@ const writable = new Writable({
     }
 });
 
-assert(new FfmpegRespawn({params: ['-i', 'in', 'out']}).params === '-progress pipe:3 -i in out');
+assert(new FfmpegRespawn({params: ['-i', 'in', 'out']}).params === '-progress pipe:3 -loglevel -8 -i in out');
 
 assert.throws(
     () => {
