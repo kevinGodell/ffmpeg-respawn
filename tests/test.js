@@ -1,3 +1,5 @@
+/* jshint nonew: false */
+
 'use strict';
 
 console.time('=====> test.js');
@@ -25,6 +27,7 @@ assert.throws(
 
 assert.throws(
     () => {
+        /* jsHint-disable no-new */
         new FfmpegRespawn({params:['-i', 'in', 'pipe:2']});
     },
     /Params error: "pipe:2" is reserved for ffmpeg logging to callback./
@@ -41,21 +44,21 @@ assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', 'pipe:0', 'out']});
     },
-    /Params error: stdin\/stdio\[0\]\/pipe:0 not supported yet/
+    /Params error: stdin\/stdio\[0]\/pipe:0 not supported yet/
 );
 
 assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', 'pipe:', 'out']});
     },
-    /Params error: stdin\/stdio\[0\]\/pipe:0 not supported yet./
+    /Params error: stdin\/stdio\[0]\/pipe:0 not supported yet./
 );
 
 assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', '-', 'out']});
     },
-    /Params error: stdin\/stdio\[0\]\/pipe:0 not supported yet./
+    /Params error: stdin\/stdio\[0]\/pipe:0 not supported yet./
 );
 
 assert.throws(
