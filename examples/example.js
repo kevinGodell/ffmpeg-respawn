@@ -77,6 +77,10 @@ const fr = new FR(
     {
         //path to ffmpeg, only needed if not in PATH
         path: ffmpegPath,
+        //set loglevel, this value will get passed to ffmpeg -loglevel
+        logLevel: 'quiet',
+        //pass callback to receive ffmpeg logging as buffer
+        logCallback: (logs)=>{console.log('received logs', logs.toString());},
         //detecting no activity for n amount of seconds will cause ffmpeg to be killed
         killAfterStall: 10,
         //ffmpeg will automatically be re-spawned if exiting, delayed by n amount of seconds
@@ -107,9 +111,6 @@ const fr = new FR(
             pipe2pam.resetCache();
             pamDiff.resetCache();
             console.log('exit callback');
-        },
-        logCallback: (logs)=>{
-            console.log('received logs', logs);
         }
     })
     .start();
