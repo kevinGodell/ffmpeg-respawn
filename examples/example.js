@@ -85,16 +85,23 @@ const fr = new FR(
         reSpawnLimit: 10,
         params: [
             //debugging ffmpeg
-            '-loglevel', 'quiet', '-hwaccel', 'auto',/* '-fflags', '+genpts+igndts+ignidx',*/
+            //'-loglevel', 'quiet', '-hwaccel', 'auto',/* '-fflags', '+genpts+igndts+ignidx',*/
             //input from rtsp cam
             '-rtsp_transport', 'tcp', '-i', 'rtsp://192.168.1.25:554/user=admin_password=pass_channel=1_stream=1.sdp',
             //output fragmented mp4 to pipe
             '-f', 'mp4',/* '-use_wallclock_as_timestamps', '1', '-reset_timestamps', '1', */'-an', '-c:v', 'copy', '-movflags', '+frag_keyframe+empty_moov', 'pipe:1',//+faststart+frag_keyframe+empty_moov+default_base_moof+omit_tfhd_offset
             //output pam image to pipe
-            '-f', 'image2pipe', '-an', '-c:v', 'pam', '-pix_fmt', 'rgb24', '-vf', 'fps=2,scale=640:-1', 'pipe:4'
+            '-f', 'image2pipe', '-an', '-c:v', 'pam', '-pix_fmt', 'rgb24', '-vf', 'fps=2,scale=640:-1', 'pipe:4',
+            //'-f', 'image2pipe', '-an', '-c:v', 'pam', '-pix_fmt', 'rgb24', '-vf', 'fps=2,scale=640:-1', 'pipe:5'
+            '-f', 'image2pipe', '-an', '-c:v', 'mjpeg', '-huffman', 'optimal', '-q:v', '7', '-vf', 'fps=1,scale=320:-1', 'pipe:5'
         ],
         //pipes should match the pipes used in params
-        pipes: [{stdioIndex: 1, destination: mp4frag}, {stdioIndex: 4, destination: pipe2pam}],//todo allow array of stackable pipes to be passed
+        pipes: [
+            {stdioIndex: 1, destination: mp4frag},
+            {stdioIndex: 4, destination: pipe2pam},
+            {stdioIndex: 5, destination: (data)=>{console.log('callback with jpeg data', data.length);}}
+        ],//todo allow array of stackable pipes to be passed
+
         exitCallback: ()=>{
             mp4frag.resetCache();
             pipe2pam.resetCache();
@@ -117,9 +124,9 @@ fr.on('exit', (code, signal)=>{
 fr.start();
 
 setTimeout(()=>{
-    //fr.stop();
+    fr.stop();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
     //pamDiff.setRegions(regions);
     //pamDiff.resetCache();
-}, 5000);
+}, 15000);
