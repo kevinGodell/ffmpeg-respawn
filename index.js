@@ -11,6 +11,8 @@ class FfmpegRespawn extends EventEmitter {
      * @param options.params
      * @param options.pipes
      * @param options.path
+     * @param options.logLevel
+     * @param options.logCallback
      * @param options.exitCallback
      * @param options.logCallback
      * @param options.killAfterStall
@@ -101,6 +103,19 @@ class FfmpegRespawn extends EventEmitter {
             }
         }
 
+        //check options.logLevel and create pipe to handle output if necessary
+        if (FfmpegRespawn._checkLoglevel(options.logLevel)) {
+            if (typeof options.logCallback === 'function' && options.logCallback.length > 0) {
+                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable(options.logCallback)});
+            } else {
+                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable((data)=>{console.log(`stderr: ${data}`);})});
+            }
+            this._params.unshift(...['-loglevel', options.logLevel]);
+            this._stdio[2] = 'pipe';
+        } else {
+            this._params.unshift(...['-loglevel', '-8']);
+        }
+
         //create and add the progress pipe to our stdioPipes array
         this._stdioPipes.push({stdioIndex: 3, destination: FfmpegRespawn._createWritable(this._onProgress.bind(this))});
 
@@ -109,11 +124,6 @@ class FfmpegRespawn extends EventEmitter {
 
         //add 'pipe' to array that will activate stdio[3] from ffmpeg
         this._stdio[3] = 'pipe';
-
-        //todo move loglevel to options
-        //if (options.loglevel) {
-        //console.log(options.loglevel);
-        //}
 
         //optional, path to ffmpeg
         if (options.path) {
@@ -272,7 +282,7 @@ class FfmpegRespawn extends EventEmitter {
 
     /**
      *
-     * @param object
+     * @param chunk
      * @private
      */
     _onProgress(chunk) {
@@ -350,6 +360,20 @@ class FfmpegRespawn extends EventEmitter {
             clearTimeout(this._spawnTimer);
             delete this._spawnTimer;
         }
+    }
+
+    /**
+     *
+     * @param level
+     * @return {boolean}
+     * @private
+     */
+    static _checkLoglevel(level) {
+        const levels = ['quiet', '-8', 'panic', '0', 'fatal', '8', 'error', '16', 'warning', '24', 'info', '32', 'verbose', '40', 'debug', '48', 'trace', '56'];
+        if (levels.indexOf(level) > 1) {
+            return true;
+        }
+        return false;
     }
 
     /**
