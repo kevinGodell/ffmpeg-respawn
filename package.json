@@ -13,7 +13,9 @@
   "scripts": {
     "test": "node tests/test",
     "preversion": "npm test",
-    "start": "node examples/example"
+    "start": "node examples/example",
+    "postversion": "npm run doc",
+    "doc": "jsdoc index.js -d docs && git commit -m 'update docs' -- docs"
   },
   "repository": {
     "type": "git",
