@@ -27,7 +27,6 @@ assert.throws(
 
 assert.throws(
     () => {
-        /* jsHint-disable no-new */
         new FfmpegRespawn({params:['-i', 'in', 'pipe:2']});
     },
     /Params error: pipe:2 is reserved for ffmpeg logging to callback./
