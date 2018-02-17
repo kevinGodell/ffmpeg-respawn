@@ -25,9 +25,10 @@ class FfmpegRespawn extends EventEmitter {
 
         //options are required on instantiation
         if (!options) {
-            throw new Error('Must pass a configuration object');
+            throw new Error('Options error: must pass a configuration object');
         }
 
+        //check that params is array and has a minimum number of items
         if (!options.params || !Array.isArray(options.params) || options.params.length < 3) {
             throw new Error('Params error: must be an array with a minimum of 3 items.');
         }
@@ -46,14 +47,13 @@ class FfmpegRespawn extends EventEmitter {
                 throw new Error('Params error: stdin/stdio[0]/pipe:0 not supported yet.');
             }
             if (this._params[i] === 'pipe:2') {
-                throw new Error('Params error: "pipe:2" is reserved for ffmpeg logging to callback.');
+                throw new Error('Params error: pipe:2 is reserved for ffmpeg logging to callback.');
             }
             if (this._params[i] === 'pipe:3') {
                 throw new Error('Params error: "pipe:3" is reserved for progress monitoring.');
             }
-            //this._params[i] === '-loglevel' && this._params[i + 1] !== 'quiet' && this._params[i + 1] !== '-8'
             if (this._params[i] === '-loglevel') {
-                throw new Error('Params error: "-loglevel" is not supported, set options.loglevel instead.');
+                throw new Error('Params error: -loglevel is not supported, set options.loglevel instead.');
             }
             if (this._params[i] === 'pipe:1' || this._params[i] === 'pipe:' || this._params[i] === '-') {
                 this._stdio[1] = 'pipe';
@@ -68,7 +68,7 @@ class FfmpegRespawn extends EventEmitter {
         }
 
         if (paramPipeCount > 0 && (!options.pipes || !Array.isArray(options.pipes) || options.pipes.length !== paramPipeCount)) {
-            throw new Error(`Pipes error: options.pipes should contain a pipes/callback count of ${paramPipeCount}.`);
+            throw new Error(`Pipes error: must be an array with ${paramPipeCount} item(s).`);
         }
 
         //create temp variable to hold array
@@ -80,7 +80,7 @@ class FfmpegRespawn extends EventEmitter {
         //test if any pipes were skipped in options.params, and process options.pipes
         for (let i = 0; i < this._stdio.length; i++) {
             if (this._stdio[i] === undefined) {
-                throw new Error(`Params error: "pipe:${i}" was skipped.`);
+                throw new Error(`Params error: pipe:${i} was skipped.`);
             }
             if (this._stdio[i] === 'pipe') {
                 let foundPipe = false;
@@ -92,13 +92,13 @@ class FfmpegRespawn extends EventEmitter {
                         } else if (pipe.destination instanceof Writable) {
                             this._stdioPipes.push(pipe);
                         } else {
-                            throw new Error(`Destination: "${pipe.destination}" must be a stream instance of Writable, Duplex, or Transform or a function that can receive a single param.`);
+                            throw new Error(`Destination: ${pipe.destination} must be a stream(Writable, Duplex, Transform) or a callback function that can receive a single param.`);
                         }
                         foundPipe = true;
                     }
                 }
                 if (!foundPipe) {
-                    throw new Error(`Pipes error: options.pipes did not have a matching pipe or callback for pipe:${i}.`);
+                    throw new Error(`Pipes error: pipes array did not have a matching pipe or callback for pipe:${i}.`);
                 }
             }
         }
@@ -174,7 +174,9 @@ class FfmpegRespawn extends EventEmitter {
             console.log(this._params);
         }
 
-        return this;// not needed
+        //seems to not be needed
+        return this;
+
         //todo check stdin for readable stream
     }
 
@@ -203,6 +205,7 @@ class FfmpegRespawn extends EventEmitter {
     start() {
         if (this._running !== true) {
             this._running = true;
+            this._exitCounter = 0;
             this._spawn();
         }
         return this;
@@ -229,7 +232,6 @@ class FfmpegRespawn extends EventEmitter {
     _spawn() {
         this._ffmpeg = spawn(this._path, this._params, {stdio: this._stdio});
         this._ffmpeg.once('error', (error)=> {
-            //this.kill();
             throw error;
         });
         this._ffmpeg.once('exit', this._onExit.bind(this));
@@ -265,10 +267,9 @@ class FfmpegRespawn extends EventEmitter {
         this._kill();
         this._stopStallTimer();
         if (this._running === true) {
-            this._exitCounter = this._exitCounter + 1 || 1;
-            if (this._exitCounter >= this._reSpawnLimit) {
-                throw new Error(`Dispatch "fail" event after ${this._exitCounter} failed attempt(s)`);
-                //todo emit fail event
+            if (++this._exitCounter >= this._reSpawnLimit) {
+                this._running = false;
+                this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._exitCounter} failed attempts.`);
             } else {
                 this._startSpawnTimer();
             }
@@ -304,7 +305,7 @@ class FfmpegRespawn extends EventEmitter {
      *
      * @private
      */
-    _onStall() {
+    _onStallTimer() {
         this._stopStallTimer();
         this._kill();
     }
@@ -317,7 +318,7 @@ class FfmpegRespawn extends EventEmitter {
         if (this._stallTimer) {
             clearTimeout(this._stallTimer);
         }
-        this._stallTimer = setTimeout(this._onStall.bind(this), this._killAfterStall);
+        this._stallTimer = setTimeout(this._onStallTimer.bind(this), this._killAfterStall);
     }
 
     /**
@@ -335,7 +336,7 @@ class FfmpegRespawn extends EventEmitter {
      *
      * @private
      */
-    _onSpawn() {
+    _onSpawnTimer() {
         this._stopSpawnTimer();
         this._spawn();
     }
@@ -348,7 +349,7 @@ class FfmpegRespawn extends EventEmitter {
         if (this._spawnTimer) {
             clearTimeout(this._spawnTimer);
         }
-        this._spawnTimer = setTimeout(this._onSpawn.bind(this), this._spawnAfterExit);
+        this._spawnTimer = setTimeout(this._onSpawnTimer.bind(this), this._spawnAfterExit);
     }
 
     /**
@@ -370,16 +371,13 @@ class FfmpegRespawn extends EventEmitter {
      */
     static _checkLoglevel(level) {
         const levels = ['quiet', '-8', 'panic', '0', 'fatal', '8', 'error', '16', 'warning', '24', 'info', '32', 'verbose', '40', 'debug', '48', 'trace', '56'];
-        if (levels.indexOf(level) > 1) {
-            return true;
-        }
-        return false;
+        return levels.indexOf(level) > 1;
     }
 
     /**
      *
      * @param destination
-     * @return {"stream".internal.Writable}
+     * @return {Writable}
      * @private
      */
     static _createWritable(destination) {
