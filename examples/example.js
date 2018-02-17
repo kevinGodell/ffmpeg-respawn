@@ -2,6 +2,10 @@
 
 process.env.NODE_ENV = 'development';
 
+process.on('uncaughtException', (data) => {
+    console.log('uncaughtException', data);
+});
+
 const FR = require('../index');
 
 const Mp4Frag = require('mp4frag');
@@ -71,8 +75,6 @@ mp4frag.on('error', (error)=> {
 
 //mp4frag.pipe(myPass);
 
-//todo add callback for ffmpeg logging to stderr
-
 const fr = new FR(
     {
         //path to ffmpeg, only needed if not in PATH
@@ -91,7 +93,7 @@ const fr = new FR(
             //debugging ffmpeg
             //'-loglevel', 'quiet', '-hwaccel', 'auto',/* '-fflags', '+genpts+igndts+ignidx',*/
             //input from rtsp cam
-            '-rtsp_transport', 'tcp', '-i', 'rtsp://192.168.1.25:554/user=admin_password=pass_channel=1_stream=1.sdp',
+            '-rtsp_transport', 'tcp', '-i', 'rtsp://192.168.1.4:554/user=admin_password=pass_channel=1_stream=1.sdp',
             //output fragmented mp4 to pipe
             '-f', 'mp4',/* '-use_wallclock_as_timestamps', '1', '-reset_timestamps', '1', */'-an', '-c:v', 'copy', '-movflags', '+frag_keyframe+empty_moov', 'pipe:1',//+faststart+frag_keyframe+empty_moov+default_base_moof+omit_tfhd_offset
             //output pam image to pipe
@@ -113,6 +115,9 @@ const fr = new FR(
             console.log('exit callback');
         }
     })
+    .on('fail', (data)=>{
+        console.log(data);
+    })
     .start();
 
 fr.on('exit', (code, signal)=>{
@@ -125,7 +130,7 @@ fr.on('exit', (code, signal)=>{
 fr.start();
 
 setTimeout(()=>{
-    fr.stop();
+    //fr.stop();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
     //pamDiff.setRegions(regions);
