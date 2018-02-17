@@ -7,17 +7,16 @@ const { EventEmitter } = require('events');
 class FfmpegRespawn extends EventEmitter {
     /**
      *
-     * @param options
-     * @param options.params
-     * @param options.pipes
-     * @param options.path
-     * @param options.logLevel
-     * @param options.logCallback
-     * @param options.exitCallback
-     * @param options.logCallback
-     * @param options.killAfterStall
-     * @param options.spawnAfterExit
-     * @param options.reSpawnLimit
+     * @param options {Object}
+     * @param options.params {Array} - Parameters passed to ffmpeg process.
+     * @param [options.pipes] {Array} - Array of pipes or callbacks to receive data output from ffmpeg stdio[n].
+     * @param [options.path] {String} - Default: ffmpeg. Specify path to ffmpeg if it is not in PATH.
+     * @param [options.logLevel] {String} - Default: -8(quiet). Valid options: quiet, -8, panic, 0, fatal, 8, error, 16, warning, 24, info, 32, verbose, 40, debug, 48, trace, 56.
+     * @param [options.logCallback] {Function} - Function to receive logging from stderr as buffer when options.loglevel is > -8(quiet).
+     * @param [options.exitCallback] {Function} - Function called when ffmpeg process exits. Contains code and signal. Exit event will be emitted if callback is not used.
+     * @param [options.killAfterStall] {Number} - Default: 10. Valid range: 10 - 60. Number of seconds to wait to kill ffmpeg process if not receiving progress.
+     * @param [options.spawnAfterExit] {Number} - Default: 2. Valid range: 2 - 60. Number of seconds to wait to re-spawn ffmpeg process after it exits.
+     * @param [options.reSpawnLimit] {Number} - Default: 1. Valid range: 1 - 10000. Number of attempts to re-spawn ffmpeg after exiting without progress. Fail event will be emitted after reaching limit.
      * @returns {FfmpegRespawn}
      */
     constructor(options) {
@@ -103,6 +102,15 @@ class FfmpegRespawn extends EventEmitter {
             }
         }
 
+        //create and add the progress pipe to our stdioPipes array
+        this._stdioPipes.push({stdioIndex: 3, destination: FfmpegRespawn._createWritable(this._onProgress.bind(this))});
+
+        //add the progress pipe to front of params array
+        this._params.unshift(...['-progress', 'pipe:3']);
+
+        //add 'pipe' to array that will activate stdio[3] from ffmpeg
+        this._stdio[3] = 'pipe';
+
         //check options.logLevel and create pipe to handle output if necessary
         if (FfmpegRespawn._checkLoglevel(options.logLevel)) {
             if (typeof options.logCallback === 'function' && options.logCallback.length > 0) {
@@ -115,15 +123,6 @@ class FfmpegRespawn extends EventEmitter {
         } else {
             this._params.unshift(...['-loglevel', '-8']);
         }
-
-        //create and add the progress pipe to our stdioPipes array
-        this._stdioPipes.push({stdioIndex: 3, destination: FfmpegRespawn._createWritable(this._onProgress.bind(this))});
-
-        //add the progress pipe to front of params array
-        this._params.unshift(...['-progress', 'pipe:3']);
-
-        //add 'pipe' to array that will activate stdio[3] from ffmpeg
-        this._stdio[3] = 'pipe';
 
         //optional, path to ffmpeg
         if (options.path) {
@@ -267,7 +266,7 @@ class FfmpegRespawn extends EventEmitter {
         this._kill();
         this._stopStallTimer();
         if (this._running === true) {
-            if (++this._exitCounter >= this._reSpawnLimit) {
+            if (++this._exitCounter > this._reSpawnLimit) {
                 this._running = false;
                 this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._exitCounter} failed attempts.`);
             } else {
@@ -275,7 +274,7 @@ class FfmpegRespawn extends EventEmitter {
             }
         }
         if (this._exitCallback) {
-            this._exitCallback();
+            this._exitCallback(code, signal);
         } else {
             this.emit('exit', code, signal);
         }
