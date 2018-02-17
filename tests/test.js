@@ -30,7 +30,7 @@ assert.throws(
         /* jsHint-disable no-new */
         new FfmpegRespawn({params:['-i', 'in', 'pipe:2']});
     },
-    /Params error: "pipe:2" is reserved for ffmpeg logging to callback./
+    /Params error: pipe:2 is reserved for ffmpeg logging to callback./
 );
 
 assert.throws(
@@ -65,14 +65,14 @@ assert.throws(
     () => {
         new FfmpegRespawn({params: ['-i', 'in', 'pipe:1'], pipes: [{stdioIndex: 4, destination: writable}]});
     },
-    /Pipes error: options.pipes did not have a matching pipe or callback for pipe:1./
+    /Pipes error: pipes array did not have a matching pipe or callback for pipe:1./
 );
 
 assert.throws(
     () => {
         new FfmpegRespawn({params: ['-i', 'in', 'pipe:1'], pipes: [{stdioIndex: 1, destination: null}]});
     },
-    /Destination: "null" must be a stream instance of Writable, Duplex, or Transform./
+    /Destination: null must be a stream\(Writable, Duplex, Transform\) or a callback function that can receive a single param./
 );
 
 //todo throw error if we don not have enough pipes to match all that were passed in params
