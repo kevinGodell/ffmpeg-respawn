@@ -103,7 +103,7 @@ class FfmpegRespawn extends EventEmitter {
         }
 
         //create and add the progress pipe to our stdioPipes array
-        this._stdioPipes.push({stdioIndex: 3, destination: FfmpegRespawn._createWritable(this._onProgress.bind(this))});
+        this._stdioPipes.push({stdioIndex: 3, destination: FfmpegRespawn._createWritable(this._checkProgress.bind(this))});
 
         //add the progress pipe to front of params array
         this._params.unshift(...['-progress', 'pipe:3']);
@@ -285,7 +285,7 @@ class FfmpegRespawn extends EventEmitter {
      * @param chunk
      * @private
      */
-    _onProgress(chunk) {
+    _checkProgress(chunk) {
         const array = chunk.toString().split('\n').slice(0, -1);
         const object = {};
         for (let i = 0; i < array.length; i++) {
@@ -295,6 +295,7 @@ class FfmpegRespawn extends EventEmitter {
         if (object.progress === 'continue') {
             this._startStallTimer();
             this._exitCounter = 0;
+            this.emit('progress', object);
         } else if (object.progress === 'end') {
             console.log('progress end');
         }
