@@ -1,6 +1,6 @@
 {
   "name": "ffmpeg-respawn",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Automatically kill a stalled ffmpeg process and re-spawn it after it exits.",
   "main": "index.js",
   "dependencies": {},
