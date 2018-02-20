@@ -199,6 +199,14 @@ class FfmpegRespawn extends EventEmitter {
 
     /**
      *
+     * @return {string | null}
+     */
+    get progress() {
+        return this._progress || null;
+    }
+
+    /**
+     *
      * @returns {FfmpegRespawn}
      */
     start() {
@@ -297,6 +305,7 @@ class FfmpegRespawn extends EventEmitter {
             this._startStallTimer();
             this._exitCounter = 0;
             this.emit('progress', object, string);
+            this._progress = string;
         } else if (object.progress === 'end') {
             console.log('progress end');
         }
