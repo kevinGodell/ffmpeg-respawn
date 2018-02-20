@@ -286,7 +286,8 @@ class FfmpegRespawn extends EventEmitter {
      * @private
      */
     _checkProgress(chunk) {
-        const array = chunk.toString().split('\n').slice(0, -1);
+        const string = chunk.toString();
+        const array = string.split('\n').slice(0, -1);
         const object = {};
         for (let i = 0; i < array.length; i++) {
             const tempArr = array[i].split('=');
@@ -295,7 +296,7 @@ class FfmpegRespawn extends EventEmitter {
         if (object.progress === 'continue') {
             this._startStallTimer();
             this._exitCounter = 0;
-            this.emit('progress', object);
+            this.emit('progress', object, string);
         } else if (object.progress === 'end') {
             console.log('progress end');
         }
