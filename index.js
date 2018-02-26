@@ -116,7 +116,7 @@ class FfmpegRespawn extends EventEmitter {
             if (typeof options.logCallback === 'function' && options.logCallback.length > 0) {
                 this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable(options.logCallback)});
             } else {
-                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable((data)=>{console.log(`stderr: ${data}`);})});
+                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable((data)=>{console.log(`stderr:${data}`);})});
             }
             this._params.unshift(...['-loglevel', options.logLevel]);
             this._stdio[2] = 'pipe';
