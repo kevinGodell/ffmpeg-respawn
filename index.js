@@ -258,12 +258,7 @@ class FfmpegRespawn extends EventEmitter {
                 for (let i = 0; i < this._stdioPipes.length; i++) {
                     this._ffmpeg.stdio[this._stdioPipes[i].stdioIndex].unpipe(this._stdioPipes[i].destination);
                 }
-                let attempts = 0;
-                while (this._ffmpeg.kill(0) && attempts < 5) {
-                    attempts++;
-                    //this._ffmpeg.kill('SIGTERM');
-                    this._ffmpeg.kill(process.platform === 'darwin' ? 'SIGHUP' : 'SIGTERM');//SIGTERM, SIGINT, (SIGHUP fails on Windows, works reliably on macOS)
-                }
+                this._ffmpeg.kill(process.platform === 'darwin' ? 'SIGHUP' : 'SIGTERM');//SIGTERM, SIGINT, (SIGHUP fails on Windows, works reliably on macOS)
             }
             delete this._ffmpeg;
         }
