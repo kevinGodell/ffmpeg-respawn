@@ -121,7 +121,7 @@ class FfmpegRespawn extends EventEmitter {
             this._params.unshift(...['-loglevel', options.logLevel]);
             this._stdio[2] = 'pipe';
         } else {
-            this._params.unshift(...['-loglevel', '-quiet']);
+            this._params.unshift(...['-loglevel', 'quiet']);
         }
 
         //optional, path to ffmpeg
