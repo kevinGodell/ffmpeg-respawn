@@ -212,7 +212,7 @@ class FfmpegRespawn extends EventEmitter {
     start() {
         if (this._running !== true) {
             this._running = true;
-            this._exitCounter = 0;
+            this._reSpawnCounter = 0;
             this._spawn();
         }
         return this;
@@ -226,7 +226,7 @@ class FfmpegRespawn extends EventEmitter {
         if (this._running === true) {
             this._running = false;
             this._stopStallTimer();
-            this._stopSpawnTimer();
+            this._stopReSpawnTimer();
             this._kill();
         }
         return this;
@@ -258,7 +258,12 @@ class FfmpegRespawn extends EventEmitter {
                 for (let i = 0; i < this._stdioPipes.length; i++) {
                     this._ffmpeg.stdio[this._stdioPipes[i].stdioIndex].unpipe(this._stdioPipes[i].destination);
                 }
-                this._ffmpeg.kill(process.platform === 'darwin' ? 'SIGHUP' : 'SIGTERM');//SIGTERM, SIGINT, SIGHUP(fails on windows)
+                let attempts = 0;
+                while (this._ffmpeg.kill(0) && attempts < 5) {
+                    attempts++;
+                    //this._ffmpeg.kill('SIGTERM');
+                    this._ffmpeg.kill(process.platform === 'darwin' ? 'SIGHUP' : 'SIGTERM');//SIGTERM, SIGINT, (SIGHUP fails on Windows, works reliably on macOS)
+                }
             }
             delete this._ffmpeg;
         }
@@ -274,11 +279,12 @@ class FfmpegRespawn extends EventEmitter {
         this._kill();
         this._stopStallTimer();
         if (this._running === true) {
-            if (++this._exitCounter > this._reSpawnLimit) {
+            if (this._reSpawnCounter >= this._reSpawnLimit) {
                 this._running = false;
-                this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._exitCounter} failed attempts.`);
+                this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._reSpawnCounter} failed attempts at respawning.`);
             } else {
-                this._startSpawnTimer();
+                this._reSpawnCounter++;
+                this._startReSpawnTimer();
             }
         }
         if (this._exitCallback) {
@@ -303,7 +309,7 @@ class FfmpegRespawn extends EventEmitter {
         }
         if (object.progress === 'continue') {
             this._startStallTimer();
-            this._exitCounter = 0;
+            this._reSpawnCounter = 0;
             this.emit('progress', object, string);
             this._progress = string;
         } else if (object.progress === 'end') {
@@ -346,8 +352,8 @@ class FfmpegRespawn extends EventEmitter {
      *
      * @private
      */
-    _onSpawnTimer() {
-        this._stopSpawnTimer();
+    _onReSpawnTimer() {
+        this._stopReSpawnTimer();
         this._spawn();
     }
 
@@ -355,18 +361,18 @@ class FfmpegRespawn extends EventEmitter {
      *
      * @private
      */
-    _startSpawnTimer() {
+    _startReSpawnTimer() {
         if (this._spawnTimer) {
             clearTimeout(this._spawnTimer);
         }
-        this._spawnTimer = setTimeout(this._onSpawnTimer.bind(this), this._spawnAfterExit);
+        this._spawnTimer = setTimeout(this._onReSpawnTimer.bind(this), this._spawnAfterExit);
     }
 
     /**
      *
      * @private
      */
-    _stopSpawnTimer() {
+    _stopReSpawnTimer() {
         if (this._spawnTimer) {
             clearTimeout(this._spawnTimer);
             delete this._spawnTimer;
@@ -405,3 +411,5 @@ class FfmpegRespawn extends EventEmitter {
  * @type {FfmpegRespawn}
  */
 module.exports = FfmpegRespawn;
+
+//todo add error event listener to pipes and propagate event out of ffmpeg-respawn instance
