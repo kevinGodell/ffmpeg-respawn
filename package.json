@@ -6,7 +6,7 @@
   "dependencies": {},
   "devDependencies": {
     "ffmpeg-static": "^2.1.0",
-    "mp4frag": "0.0.14",
+    "mp4frag": "0.0.16",
     "pam-diff": "^0.12.1-napi",
     "pipe2pam": "^0.6.2"
   },
