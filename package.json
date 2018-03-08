@@ -6,6 +6,7 @@
   "dependencies": {},
   "devDependencies": {
     "ffmpeg-static": "^2.1.0",
+    "jsdoc": "^3.5.5",
     "mp4frag": "0.0.16",
     "pam-diff": "^0.12.1-napi",
     "pipe2pam": "^0.6.2"
@@ -15,7 +16,7 @@
     "preversion": "npm test",
     "start": "node examples/example",
     "postversion": "npm run doc",
-    "doc": "jsdoc index.js -d docs && git commit -m 'update docs' -- docs"
+    "doc": "node_modules/.bin/jsdoc index.js -d docs && git commit -m 'update docs' -- docs"
   },
   "repository": {
     "type": "git",
