@@ -20,17 +20,19 @@ const pipe2pam = new Pipe2Pam();
 
 let count = 0;
 
-/*const { PassThrough } = require('stream');
+const { PassThrough } = require('stream');
 
-const myPass = new PassThrough({
+const stderrLogs = new PassThrough({
     //objectMode: false,
-    writableObjectMode: true,
+    //writableObjectMode: true,
     transform(chunk, encoding, callback) {
-        console.log(chunk);
-        console.log(mp4frag.mime);
+        console.log('stderr: ', chunk.toString());
+        if (this._readableState.pipesCount > 0) {
+            this.push(chunk);
+        }
         callback();
     }
-});*/
+});
 
 pipe2pam.on('pam', (data) => {
     console.log('pam', data.width, data.height, data.depth, data.maxval, data.tupltype);
@@ -93,24 +95,21 @@ mp4frag.on('error', (error) => {
     console.log('error ', error);
 });
 
-//mp4frag.pipe(myPass);
-
 const fr = new FR(
     {
         //path to ffmpeg, only needed if not in PATH
         path: ffmpegPath,
         //set loglevel, this value will get passed to ffmpeg -loglevel
-        logLevel: 'quiet',
-        //pass callback to receive ffmpeg logging as buffer
-        logCallback: (logs) => {
-            console.log('received logs', logs.toString());
-        },
+        logLevel: 'warning',
+        //pass writable pipe or callback function to receive ffmpeg logging as buffer
+        stderrLogs: stderrLogs,
         //detecting no activity for n amount of seconds will cause ffmpeg to be killed
         killAfterStall: 10,
         //ffmpeg will automatically be re-spawned if exiting, delayed by n amount of seconds
         spawnAfterExit: 2,
         //number of time to re-spawn after exiting with no progress
         reSpawnLimit: 10,
+        //parameters that will be pass to spawned ffmpeg process
         params: [
             //input from rtsp cam
             '-rtsp_transport', 'tcp', '-i', 'rtsp://192.168.1.4:554/user=admin_password=pass_channel=1_stream=1.sdp',
@@ -127,11 +126,13 @@ const fr = new FR(
             {stdioIndex: 1, destination: mp4frag},
             {stdioIndex: 4, destination: pipe2pam},
             {
+                //use callback, but could have been a writable pipe
                 stdioIndex: 5, destination: function (data) {
                     console.log('callback with jpeg data', data.length);
                 }
             }
         ],
+        //function that is called when internal ffmpeg process exits, may be used for resetting some options, etc.
         exitCallback: () => {
             mp4frag.resetCache();
             pipe2pam.resetCache();
@@ -152,6 +153,7 @@ fr.on('exit', (code, signal) => {
 });
 
 setTimeout(() => {
+    console.log('time out to trigger stop');
     fr.stop();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
@@ -160,6 +162,7 @@ setTimeout(() => {
 }, 15000);
 
 setTimeout(() => {
+    console.log('time out to trigger stop');
     fr.start();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
