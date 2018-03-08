@@ -49,7 +49,7 @@ class FfmpegRespawn extends EventEmitter {
                 throw new Error('Params error: pipe:2 is reserved, set options.logLevel and options.stderrLogs instead.');
             }
             if (this._params[i] === 'pipe:3') {
-                throw new Error('Params error: "pipe:3" is reserved for internal progress monitoring.');
+                throw new Error('Params error: pipe:3 is reserved for internal progress monitoring.');
             }
             if (this._params[i] === '-loglevel') {
                 throw new Error('Params error: -loglevel is reserved, set options.logLevel and options.stderrLogs instead.');

@@ -29,14 +29,14 @@ assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', 'in', 'pipe:2']});
     },
-    /Params error: pipe:2 is reserved for ffmpeg logging to callback./
+    /Params error: pipe:2 is reserved, set options.logLevel and options.stderrLogs instead./
 );
 
 assert.throws(
     () => {
         new FfmpegRespawn({params:['-i', 'in', 'pipe:3']});
     },
-    /Params error: "pipe:3" is reserved for progress monitoring./
+    /Params error: pipe:3 is reserved for internal progress monitoring./
 );
 
 assert.throws(
