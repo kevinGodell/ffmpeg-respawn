@@ -12,7 +12,7 @@ class FfmpegRespawn extends EventEmitter {
      * @param [options.pipes] {Array} - Array of pipes or callbacks to receive data output from ffmpeg stdio[n].
      * @param [options.path] {String} - Default: ffmpeg. Specify path to ffmpeg if it is not in PATH.
      * @param [options.logLevel] {String} - Default: -8(quiet). Valid options: quiet, -8, panic, 0, fatal, 8, error, 16, warning, 24, info, 32, verbose, 40, debug, 48, trace, 56.
-     * @param [options.logCallback] {Function} - Function to receive logging from stderr as buffer when options.loglevel is > -8(quiet).
+     * @param [options.stderrLogs] {Function|writable} - Function or writable pipe to receive logging from stderr as buffer when options.loglevel is > -8(quiet). If logging is set without passing callback or pipe, output will be sent to console.
      * @param [options.exitCallback] {Function} - Function called when ffmpeg process exits. Contains code and signal. Exit event will be emitted if callback is not used.
      * @param [options.killAfterStall] {Number} - Default: 10. Valid range: 10 - 60. Number of seconds to wait to kill ffmpeg process if not receiving progress.
      * @param [options.spawnAfterExit] {Number} - Default: 2. Valid range: 2 - 60. Number of seconds to wait to re-spawn ffmpeg process after it exits.
@@ -46,13 +46,13 @@ class FfmpegRespawn extends EventEmitter {
                 throw new Error('Params error: stdin/stdio[0]/pipe:0 not supported yet.');
             }
             if (this._params[i] === 'pipe:2') {
-                throw new Error('Params error: pipe:2 is reserved for ffmpeg logging to callback.');
+                throw new Error('Params error: pipe:2 is reserved, set options.logLevel and options.stderrLogs instead.');
             }
             if (this._params[i] === 'pipe:3') {
-                throw new Error('Params error: "pipe:3" is reserved for progress monitoring.');
+                throw new Error('Params error: "pipe:3" is reserved for internal progress monitoring.');
             }
             if (this._params[i] === '-loglevel') {
-                throw new Error('Params error: -loglevel is not supported, set options.loglevel instead.');
+                throw new Error('Params error: -loglevel is reserved, set options.logLevel and options.stderrLogs instead.');
             }
             if (this._params[i] === 'pipe:1' || this._params[i] === 'pipe:' || this._params[i] === '-') {
                 this._stdio[1] = 'pipe';
@@ -113,8 +113,10 @@ class FfmpegRespawn extends EventEmitter {
 
         //check options.logLevel and create pipe to handle output if necessary
         if (FfmpegRespawn._checkLoglevel(options.logLevel)) {
-            if (typeof options.logCallback === 'function' && options.logCallback.length > 0) {
-                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable(options.logCallback)});
+            if (typeof options.stderrLogs === 'function' && options.stderrLogs.length > 0) {
+                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable(options.stderrLogs)});
+            } else if (options.stderrLogs instanceof Writable) {
+                this._stdioPipes.push({stdioIndex: 2, destination: options.stderrLogs});
             } else {
                 this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable((data)=>{console.log(`stderr:${data}`);})});
             }
