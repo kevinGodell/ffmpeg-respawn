@@ -184,6 +184,24 @@ class FfmpegRespawn extends EventEmitter {
     /**
      *
      * @readonly
+     * @return {*|null}
+     */
+    get ffmpeg() {
+        return this._ffmpeg || null;
+    }
+
+    /**
+     *
+     * @readonly
+     * @return {*}
+     */
+    get stdio() {
+        return this._ffmpeg && this._ffmpeg.stdio ? this._ffmpeg.stdio : null;
+    }
+
+    /**
+     *
+     * @readonly
      * @returns {string | null}
      */
     get params() {
@@ -307,9 +325,10 @@ class FfmpegRespawn extends EventEmitter {
         if (object.progress === 'continue') {
             this._startStallTimer();
             this._reSpawnCounter = 0;
-            this.emit('progress', object, string);
             this._progress = string;
+            this.emit('progress', object, string);
         } else if (object.progress === 'end') {
+            this._progress = string;
             console.log('progress end');
         }
     }
