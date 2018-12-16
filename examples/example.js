@@ -108,7 +108,7 @@ const fr = new FR(
         //ffmpeg will automatically be re-spawned if exiting, delayed by n amount of seconds
         spawnAfterExit: 2,
         //number of time to re-spawn after exiting with no progress
-        reSpawnLimit: 10,
+        reSpawnLimit: Number.POSITIVE_INFINITY,
         //parameters that will be pass to spawned ffmpeg process
         params: [
             //input from rtsp cam
@@ -133,27 +133,28 @@ const fr = new FR(
             }
         ],
         //function that is called when internal ffmpeg process exits, may be used for resetting some options, etc.
-        exitCallback: () => {
+        exitCallback: (code, signal) => {
+            console.log(`exitCallback code:${code} signal:${signal}`);
             mp4frag.resetCache();
             pipe2pam.resetCache();
             pamDiff.resetCache();
-            console.log('exit callback');
         }
     })
-    .on('fail', (data) => {
-        console.log(data);
+    .on('fail', data => {
+        console.log('fail', data);
     })
     .start();
 
+//will not be called because exitCallback is being used
 fr.on('exit', (code, signal) => {
-    console.log('external exit listener', code, signal);
+    console.log('exit event', code, signal);
     mp4frag.resetCache();
     pipe2pam.resetCache();
     pamDiff.resetCache();
 });
 
 setTimeout(() => {
-    console.log('time out to trigger stop');
+    console.log('time out triggering .stop()');
     fr.stop();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
@@ -162,7 +163,7 @@ setTimeout(() => {
 }, 15000);
 
 setTimeout(() => {
-    console.log('time out to trigger stop');
+    console.log('time out triggering .start()');
     fr.start();
     //pamDiff.setDifference(2);
     //pamDiff.setPercent(3);
