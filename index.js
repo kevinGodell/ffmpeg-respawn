@@ -8,15 +8,15 @@ class FfmpegRespawn extends EventEmitter {
     /**
      *
      * @param options {Object}
-     * @param options.params {Array} - Parameters passed to ffmpeg process.
-     * @param [options.pipes] {Array} - Array of pipes or callbacks to receive data output from ffmpeg stdio[n].
-     * @param [options.path] {String} - Default: ffmpeg. Specify path to ffmpeg if it is not in PATH.
-     * @param [options.logLevel] {String} - Default: -8(quiet). Valid options: quiet, -8, panic, 0, fatal, 8, error, 16, warning, 24, info, 32, verbose, 40, debug, 48, trace, 56.
-     * @param [options.stderrLogs] {Function|writable} - Function or writable pipe to receive logging from stderr as buffer when options.loglevel is > -8(quiet). If logging is set without passing callback or pipe, output will be sent to console.
-     * @param [options.exitCallback] {Function} - Function called when ffmpeg process exits. Contains code and signal. Exit event will be emitted if callback is not used.
-     * @param [options.killAfterStall] {Number} - Default: 10. Valid range: 10 - 60. Number of seconds to wait to kill ffmpeg process if not receiving progress.
-     * @param [options.spawnAfterExit] {Number} - Default: 2. Valid range: 2 - 60. Number of seconds to wait to re-spawn ffmpeg process after it exits.
-     * @param [options.reSpawnLimit] {Number} - Default: 1. Valid range: 1 - 10000. Number of attempts to re-spawn ffmpeg after exiting without progress. Fail event will be emitted after reaching limit.
+     * @param options.params {String[]} - Parameters passed to ffmpeg process.
+     * @param [options.pipes] {Writable[]|Function[]} - Array of writable pipes and/or callback functions to receive data output from ffmpeg stdio[n].
+     * @param [options.path=ffmpeg] {String} - Specify path to ffmpeg if it is not in PATH.
+     * @param [options.logLevel=quiet] {String} - Valid options: quiet, -8, panic, 0, fatal, 8, error, 16, warning, 24, info, 32, verbose, 40, debug, 48, trace, 56.
+     * @param [options.stderrLogs] {Function|Writable} - Callback function or writable pipe to receive logging from stderr as buffer when options.loglevel is > -8(quiet). If logging is set without passing callback or pipe, output will be sent to console.
+     * @param [options.exitCallback] {Function} - Callback function called when ffmpeg process exits. Contains code and signal. Exit event will be emitted if callback is not used.
+     * @param [options.killAfterStall=10] {Number} - Valid range: 10 - 60. Number of seconds to wait to kill ffmpeg process if not receiving progress.
+     * @param [options.spawnAfterExit=2] {Number} - Valid range: 2 - 60. Number of seconds to wait to re-spawn ffmpeg process after it exits.
+     * @param [options.reSpawnLimit=1] {Number} - Valid range: 0 - Infinity. Number of attempts to re-spawn ffmpeg after exiting without progress. Fail event will be emitted after reaching limit.
      * @returns {FfmpegRespawn}
      */
     constructor(options) {
@@ -118,7 +118,7 @@ class FfmpegRespawn extends EventEmitter {
             } else if (options.stderrLogs instanceof Writable) {
                 this._stdioPipes.push({stdioIndex: 2, destination: options.stderrLogs});
             } else {
-                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable((data)=>{console.log(`stderr:${data}`);})});
+                this._stdioPipes.push({stdioIndex: 2, destination: FfmpegRespawn._createWritable(data => console.log(`stderr:${data}`))});
             }
             this._params.unshift(...['-loglevel', options.logLevel]);
             this._stdio[2] = 'pipe';
@@ -139,7 +139,7 @@ class FfmpegRespawn extends EventEmitter {
         }
 
         //configure number of seconds that passes without progress before killing ffmpeg process
-        const killAfterStall = parseInt(options.killAfterStall);
+        const killAfterStall = Math.trunc(options.killAfterStall);
         if (isNaN(killAfterStall) || killAfterStall < 10) {
             this._killAfterStall = 10000;
         } else if (killAfterStall > 60) {
@@ -149,7 +149,7 @@ class FfmpegRespawn extends EventEmitter {
         }
 
         //configure time to wait before re spawning ffmpeg after exiting
-        const spawnAfterExit = parseInt(options.spawnAfterExit);
+        const spawnAfterExit = Math.trunc(options.spawnAfterExit);
         if (isNaN(spawnAfterExit) || spawnAfterExit < 2) {
             this._spawnAfterExit = 2000;
         } else if (spawnAfterExit > 60) {
@@ -159,13 +159,13 @@ class FfmpegRespawn extends EventEmitter {
         }
 
         //set number of failed attempts to respawn, number is reset if progress occurs
-        const reSpawnLimit = parseInt(options.reSpawnLimit);
-        if (isNaN(reSpawnLimit) || reSpawnLimit < 1) {
+        const reSpawnLimit = Math.trunc(options.reSpawnLimit);
+        if (Number.isNaN(reSpawnLimit)) {
             this._reSpawnLimit = 1;
-        } else if (reSpawnLimit > 10000) {
-            this._reSpawnLimit = 10000;
+        } else if (reSpawnLimit < 0) {
+            this._reSpawnLimit = 0;
         } else {
-            this._reSpawnLimit = reSpawnLimit;
+            this._reSpawnLimit = reSpawnLimit
         }
 
         //output some details if in development
@@ -275,19 +275,19 @@ class FfmpegRespawn extends EventEmitter {
     _onExit(code, signal) {
         this._kill();
         this._stopStallTimer();
-        if (this._running === true) {
-            if (this._reSpawnCounter >= this._reSpawnLimit) {
-                this._running = false;
-                this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._reSpawnCounter} failed attempts at respawning.`);
-            } else {
-                this._reSpawnCounter++;
-                this._startReSpawnTimer();
-            }
-        }
         if (this._exitCallback) {
             this._exitCallback(code, signal);
         } else {
             this.emit('exit', code, signal);
+        }
+        if (this._running === true) {
+            if (this._reSpawnCounter >= this._reSpawnLimit) {
+                this._running = false;
+                this.emit('fail', `Ffmpeg unable to get progress from input source after ${this._reSpawnCounter} attempts at respawning.`);
+            } else {
+                this._reSpawnCounter++;
+                this._startReSpawnTimer();
+            }
         }
     }
 
