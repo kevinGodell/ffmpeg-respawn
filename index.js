@@ -170,7 +170,7 @@ class FfmpegRespawn extends EventEmitter {
 
         //output some details if in development
         if (process.env.NODE_ENV === 'development') {
-            console.dir(this, {showHidden: true, depth: 3, colors: true});
+            console.dir(this, {showHidden: true, depth: 2, colors: true});
         }
 
         //seems to not be needed
