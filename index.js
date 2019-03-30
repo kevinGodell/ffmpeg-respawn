@@ -165,14 +165,12 @@ class FfmpegRespawn extends EventEmitter {
         } else if (reSpawnLimit < 0) {
             this._reSpawnLimit = 0;
         } else {
-            this._reSpawnLimit = reSpawnLimit
+            this._reSpawnLimit = reSpawnLimit;
         }
 
         //output some details if in development
         if (process.env.NODE_ENV === 'development') {
-            console.log(this._stdio);
-            console.log(this._stdioPipes);
-            console.log(this._params);
+            console.dir(this, {showHidden: true, depth: 3, colors: true});
         }
 
         //seems to not be needed

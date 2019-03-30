@@ -4,6 +4,8 @@
 
 console.time('=====> test.js');
 
+process.env.NODE_ENV = 'development';
+
 const FfmpegRespawn = require('../index');
 
 const assert = require('assert');
