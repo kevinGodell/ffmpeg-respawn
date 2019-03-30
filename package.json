@@ -8,7 +8,7 @@
     "ffmpeg-static": "^2.4.0",
     "jsdoc": "^3.5.5",
     "mp4frag": "^0.1.1",
-    "pam-diff": "^0.13.5",
+    "pam-diff": "^0.13.9",
     "pipe2pam": "^0.6.2"
   },
   "scripts": {
