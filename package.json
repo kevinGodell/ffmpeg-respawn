@@ -5,11 +5,15 @@
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
-    "ffmpeg-static": "^2.4.0",
-    "jsdoc": "^3.5.5",
+    "@ffmpeg-installer/ffmpeg": "^1.0.19",
+    "eslint": "^6.0.1",
+    "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "jsdoc": "^3.6.2",
     "mp4frag": "^0.1.1",
-    "pam-diff": "^0.13.9",
-    "pipe2pam": "^0.6.2"
+    "pam-diff": "^1.0.0",
+    "pipe2pam": "^0.6.2",
+    "prettier": "^1.18.2"
   },
   "scripts": {
     "test": "node tests/test",
@@ -17,7 +21,8 @@
     "start": "node examples/example",
     "postversion": "npm run doc",
     "doc": "jsdoc index.js -d docs && git commit -m \"update docs\" -- docs",
-    "pack": "npm pack"
+    "pack": "npm pack",
+    "lint": "eslint --fix --ext .js --ignore-path .gitignore ."
   },
   "repository": {
     "type": "git",
