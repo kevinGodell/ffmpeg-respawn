@@ -6,7 +6,7 @@ process.on('uncaughtException', (data) => {
   console.log('uncaughtException', data);
 });
 
-const FR = require('../index');
+const FR = require('..');
 
 const Mp4Frag = require('mp4frag');
 
