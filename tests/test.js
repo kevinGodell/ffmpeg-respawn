@@ -2,8 +2,6 @@
 
 console.time('=====> test.js');
 
-process.env.NODE_ENV = 'development';
-
 const FfmpegRespawn = require('..');
 
 const assert = require('assert');
@@ -24,7 +22,11 @@ assert.throws(() => {
 
 assert.throws(() => {
   new FfmpegRespawn({ params: ['-i', 'in', 'pipe:2'] });
-}, /Params error: pipe:2 is reserved, set options.logLevel and options.stderrLogs instead./);
+}, /Params error: pipe:2 is reserved, set options.logLevel and listen to "stderr" event instead./);
+
+assert.throws(() => {
+  new FfmpegRespawn({ params: ['-i', '-loglevel', 'in', 'pipe:3'] });
+}, /Params error: -loglevel is reserved, set options.logLevel and listen to "stderr" event instead./);
 
 assert.throws(() => {
   new FfmpegRespawn({ params: ['-i', 'in', 'pipe:1'] });
